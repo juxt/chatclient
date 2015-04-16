@@ -3,7 +3,8 @@
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
             [sablono.core :as html :refer-macros [html]]
-            [cljs.core.async :refer [>! <! chan]]))
+            [cljs.core.async :refer [>! <! chan]]
+            [cljs.reader :refer (read-string)]))
 
 (def app-model
   (atom
@@ -43,7 +44,7 @@
        [:div
         [:h2 "Messages"]
         [:table
-         (for [{:keys [from message]} (reverse (take 5 (reverse (:messages data))))]
+         (for [{:keys [from message]} (reverse (take 10 (reverse (:messages data))))]
            [:tr
             [:td (str from ">")]
             [:td message]])]
@@ -52,7 +53,7 @@
 ;; Now for allowing the user to send messages
 
 (defn send-message [data owner]
-  (let [msg {:from "me"
+  (let [msg {:from (om/get-state owner :user)
              :message (:message-being-typed @data)}]
     (go (>! (om/get-state owner :channel) msg)))
 
@@ -77,8 +78,7 @@
                            (let [value (.-value (.-target ev))]
                              (om/update! data :message-being-typed value)))}]
 
-        [:button {:on-click (fn [_]
-                              (send-message data owner))}
+        [:button {:on-click (fn [_] (send-message data owner))}
          "Send!"]
         ]))))
 
@@ -88,18 +88,32 @@
   (reify
     om/IInitState
     (init-state [this]
-      {:channel (chan 10)})
+      {:in-channel (chan 10)
+       :out-channel (chan 10)})
 
     om/IWillMount
     (will-mount [this]
+      ;; Read the messages coming in
       (let [es (new js/EventSource "http://localhost:3001/events/events")]
         (.addEventListener
          es "message"
          (fn [ev]
-           (go (>! (om/get-state owner :channel)
-                   {:from "someone" :message (.-data ev)}))
+           (go (>! (om/get-state owner :in-channel)
+                   (read-string (.-data ev))
+                   ))
            ))
-        (om/set-state! owner :es es)))
+        (om/set-state! owner :es es))
+
+      ;; Write the messages coming out
+      (go-loop []
+        (when-let [val (<! (om/get-state owner :out-channel))]
+          (.log js/console (str "POST this message:" val))
+
+          (let [xhr (new js/XMLHttpRequest)]
+            (.open xhr "post" "http://localhost:3001/events/messages")
+            (.send xhr (pr-str val)))
+
+          (recur))))
 
     om/IWillUnmount
     (will-unmount [this]
@@ -111,11 +125,15 @@
       (html
        [:div
         [:h1 "Hello " (:user data)]
-        (om/build messages-component (:messages-panel data) {:state {:channel (om/get-state owner :channel)}})
-        (om/build input-component (:input-panel data) {:state {:channel (om/get-state owner :channel)}})
+        (om/build messages-component (:messages-panel data) {:state {:channel (om/get-state owner :in-channel)}})
+        (om/build input-component (:input-panel data) {:state {:channel (om/get-state owner :out-channel)
+                                                               :user (:user data)}})
         ]))))
 
 
 (defn init []
+  (let [user (subs (.-search (.-location js/document)) 6)]
+    (swap! app-model assoc-in [:user] user)
+    )
   (om/root chatapp app-model
            {:target (. js/document (getElementById "container"))}))
