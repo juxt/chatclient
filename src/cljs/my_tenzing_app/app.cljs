@@ -23,6 +23,17 @@
        [:div
         [:h1 "Hello"]
         [:h2 "Messages"]
+        [:input {:type "text"
+                 :on-change
+                 (fn [ev]
+                   (let [value (.-value (.-target ev))]
+                     (.log js/console value)
+                     (.log js/console (type value))
+
+                     (om/update! data :message-being-typed "hi")
+                     )
+                   )}
+         (:message-being-typed data)]
 
         ])
       )))
