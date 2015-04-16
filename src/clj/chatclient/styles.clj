@@ -1,4 +1,4 @@
-(ns my-tenzing-app.styles
+(ns chatclient.styles
   (:require [garden.def :refer [defrule defstyles]]
             [garden.stylesheet :refer [rule]]))
 

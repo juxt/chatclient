@@ -1,2 +1,2 @@
-{:require  [my-tenzing-app.app]
- :init-fns [my-tenzing-app.app/init]}
+{:require  [chatclient.app]
+ :init-fns [chatclient.app/init]}

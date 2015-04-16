@@ -23,7 +23,7 @@
 (deftask build []
   (comp (speak)
         (cljs)
-        (garden :styles-var 'my-tenzing-app.styles/screen
+        (garden :styles-var 'chatclient.styles/screen
 :output-to "css/garden.css")
         (less)
         (sift   :move {#"less.css" "css/less.css" #"less.main.css.map" "css/less.main.css.map"})))
@@ -49,7 +49,7 @@
   (task-options! cljs {:optimizations :none
                        :unified-mode true
                        :source-map true}
-                 reload {:on-jsload 'my-tenzing-app.app/init}
+                 reload {:on-jsload 'chatclient.app/init}
                       less   {:source-map  true})
   identity)
 

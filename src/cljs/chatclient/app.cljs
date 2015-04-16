@@ -1,4 +1,4 @@
-(ns my-tenzing-app.app
+(ns chatclient.app
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
