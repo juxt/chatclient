@@ -9,6 +9,7 @@
                  [sablono "0.3.4"]
                  [boot-garden "1.2.5-1" :scope "test"]
                  [deraen/boot-less "0.2.1" :scope "test"]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  ])
 
 (require
